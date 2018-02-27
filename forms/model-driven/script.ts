@@ -19,7 +19,7 @@ import {
 @Component({
   selector: 'model-form',
   template: `
-    <form [formGroup]="myform" novalidate>
+    <form (ngSubmit)="onSubmit()" [formGroup]="myform" novalidate>
       <fieldset formGroupName="name">
         <div class="form-group"
             [ngClass]="{
@@ -99,8 +99,10 @@ import {
           </option>
         </select>
       </div>
+      <button type="submit" class="btn btn-primary">Submit</button>
     </form>
 
+    <br>
     <pre>{{ myform.value | json }}</pre>
 
     <!--
@@ -132,17 +134,17 @@ class ModelFormComponent implements OnInit {
   }
 
   createFormControls() {
-    this.firstName = new FormControl('', Validators.required);
-    this.lastName = new FormControl('', Validators.required);
-    this.email = new FormControl('', [
+    this.firstName = new FormControl('Zen', Validators.required);
+    this.lastName = new FormControl('Shiba', Validators.required);
+    this.email = new FormControl('zenshiba@trash-mail.com', [
       Validators.required,
       Validators.pattern('[^ @]*@[^ @]*')
     ]);
-    this.password = new FormControl('', [
+    this.password = new FormControl('zentrashed', [
       Validators.minLength(8),
       Validators.required
     ]);
-    this.language = new FormControl('');
+    this.language = new FormControl('German');
   }
 
   createForm() {
@@ -155,6 +157,13 @@ class ModelFormComponent implements OnInit {
       password: this.password,
       language: this.language
     });
+  }
+
+  onSubmit() {
+    if (this.myform.valid) {
+      console.log("Form Submitted");
+      this.myform.reset();
+    }
   }
 }
 
