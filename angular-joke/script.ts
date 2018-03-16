@@ -1,9 +1,9 @@
 import {
   platformBrowserDynamic
-} from '@angular/platform-browser-dynamic';
+} from "@angular/platform-browser-dynamic";
 import {
   BrowserModule
-} from '@angular/platform-browser';
+} from "@angular/platform-browser";
 import {
   NgModule,
   Component,
@@ -11,20 +11,26 @@ import {
   Output,
   EventEmitter,
   Pipe
-} from '@angular/core';
+} from "@angular/core";
+import {
+  FormGroup,
+  FormControl,
+  ReactiveFormsModule,
+  Validators
+} from "@angular/forms";
 
 @Pipe({
-  name: 'clean'
+  name: "clean"
 })
 class CleanPipe {
   transform(value: string, badWords: string): string {
     const badWordsList = badWords
-      .split(',')
+      .split(",")
       .map(item => item.trim());
     console.log(badWordsList);
 
     for (const badWord of badWordsList) {
-      value = value.replace(badWord, '$%#@!');
+      value = value.replace(badWord, "$%#@!");
     }
 
     return value;
@@ -48,18 +54,18 @@ class Joke {
 }
 
 @Component({
-  selector: 'joke',
+  selector: "joke",
   template: `
-    <div class='card card-block'>
-      <h4 class='card-title'>{{data.setup | clean:'boo,damn,hell'}}</h4>
-      <p class='card-text' [hidden]='data.hide'>{{data.punchline | clean:'boo,damn,hell'}}</p>
-      <a class='btn btn-warning' style='color: white' (click)='data.toggle()'>Tell me</a>
-      <a class='btn btn-danger' style='color: white' (click)='jokeToDelete()'>Delete</a>
+    <div class="card card-block">
+      <h4 class="card-title">{{data.setup | clean:"boo,damn,hell"}}</h4>
+      <p class="card-text" [hidden]="data.hide">{{data.punchline | clean:"boo,damn,hell"}}</p>
+      <a class="btn btn-warning" style="color: white" (click)="data.toggle()">Tell me</a>
+      <a class="btn btn-danger" style="color: white" (click)="jokeToDelete()">Delete</a>
     </div>
   `
 })
-class JokeComponent {
-  @Input('joke') data: Joke;
+class JokeComponent implements OnInit {
+  @Input("joke") data: Joke;
   @Output() jokeDeleted = new EventEmitter<Joke>();
 
   jokeToDelete() {
@@ -68,43 +74,89 @@ class JokeComponent {
 }
 
 @Component({
-  selector: 'joke-form',
+  selector: "joke-form",
   template: `
-    <div class='card card-block'>
-      <h4 class='card-title'>Create Joke</h4>
-      <div class='form-group'>
-        <input type='text'
-              class='form-control'
-              placeholder='Enter the setup'
-              #setup>
-      </div>
-      <div class='form-group'>
-        <input type='text'
-              class='form-control'
-              placeholder='Enter the punchline'
-              #punchline>
-      </div>
-      <button type='button'
-              class='btn btn-primary'
-              (click)='createJoke(setup.value, punchline.value)'>Create
-      </button>
+    <div class="card card-block">
+      <h4 class="card-title">Create Joke</h4>
+      <form (ngSubmit)="onSubmit()" [formGroup]="myform" novalidate>
+        <div class="form-group"
+            [ngClass]="{
+              'has-danger': setup.invalid && (setup.dirty || setup.touched),
+              'has-success': setup.valid && (setup.dirty || setup.touched)
+            }">
+          <input type="text"
+              class="form-control"
+              formControlName="setup"
+              placeholder="Enter the setup">
+          <div class="form-control-feedback"
+              *ngIf="setup.errors && (setup.dirty || setup.touched)">
+            <p *ngIf="setup.errors.required">Setup is required</p>
+          </div>
+        </div>
+        <div class="form-group"
+            [ngClass]="{
+              'has-danger': punchline.invalid && (punchline.dirty || punchline.touched),
+              'has-success': punchline.valid && (punchline.dirty || punchline.touched)
+            }">
+          <input type="text"
+              class="form-control"
+              placeholder="Enter the punchline"
+              formControlName="punchline">
+          <div class="form-control-feedback"
+              *ngIf="punchline.errors && (punchline.dirty || punchline.touched)">
+            <p *ngIf="punchline.errors.required">Punchline is required</p>
+          </div>
+        </div>
+        <button type="submit"
+            class="btn btn-primary">Create
+        </button>
+      </form>
     </div>
   `
 })
 class JokeFormComponent {
   @Output() jokeCreated = new EventEmitter<Joke>();
 
-  createJoke(setup: string, punchline: string) {
+  /* createJoke(setup: string, punchline: string) {
     this.jokeCreated.emit(new Joke(setup, punchline));
+  } */
+
+  myform: FormGroup;
+  setup: FormControl;
+  punchline: FormControl;
+
+  ngOnInit() {
+    this.createFormControls();
+    this.createForm();
+  }
+
+  createFormControls() {
+    this.setup = new FormControl("", Validators.required);
+    this.punchline = new FormControl("", Validators.required);
+  }
+
+  createForm() {
+    this.myform = new FormGroup({
+      setup: this.setup,
+      punchline: this.punchline
+    })
+  }
+
+  onSubmit() {
+    if (this.myform.valid) {
+      console.log("Form Submitted");
+      this.jokeCreated.emit(new Joke(this.setup.value, this.punchline.value));
+      this.myform.reset();
+    }
   }
 }
 
 @Component({
-  selector: 'joke-list',
+  selector: "joke-list",
   template: `
-    <joke-form (jokeCreated)='addJoke($event)'>
+    <joke-form (jokeCreated)="addJoke($event)">
     </joke-form>
-    <joke *ngFor='let j of jokes' [joke]='j' (jokeDeleted)='deleteJoke($event)'></joke>
+    <joke *ngFor="let j of jokes" [joke]="j" (jokeDeleted)="deleteJoke($event)"></joke>
   `
 })
 class JokeListComponent {
@@ -112,9 +164,9 @@ class JokeListComponent {
 
   constructor() {
     this.jokes = [
-      new Joke('What did the cheese say when it looked in the mirror?', 'Halloumi (Hello Me)'),
-      new Joke('What kind of cheese do you use to disguise a small horse?', 'Mask-a-pony (Mascarpone)'),
-      new Joke('A kid threw a lump of cheddar at me', 'I thought ‘That’s not very mature’')
+      new Joke("What did the cheese say when it looked in the mirror?", "Halloumi (Hello Me)"),
+      new Joke("What kind of cheese do you use to disguise a small horse?", "Mask-a-pony (Mascarpone)"),
+      new Joke("A kid threw a lump of cheddar at me", "I thought ‘That’s not very mature’")
     ];
   }
 
@@ -131,7 +183,7 @@ class JokeListComponent {
 }
 
 @Component({
-  selector: 'app',
+  selector: "app",
   template: `
     <joke-list></joke-list>
   `
@@ -139,7 +191,10 @@ class JokeListComponent {
 class AppComponent { }
 
 @NgModule({
-  imports: [BrowserModule],
+  imports: [
+    BrowserModule,
+    ReactiveFormsModule
+  ],
   declarations: [
     AppComponent,
     JokeComponent,
