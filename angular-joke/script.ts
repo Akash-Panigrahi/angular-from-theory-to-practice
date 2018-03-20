@@ -10,7 +10,9 @@ import {
   Input,
   Output,
   EventEmitter,
-  Pipe
+  Pipe,
+  Inject,
+  InjectionToken
 } from "@angular/core";
 import {
   FormGroup,
@@ -27,7 +29,6 @@ class CleanPipe {
     const badWordsList = badWords
       .split(",")
       .map(item => item.trim());
-    console.log(badWordsList);
 
     for (const badWord of badWordsList) {
       value = value.replace(badWord, "$%#@!");
@@ -50,6 +51,35 @@ class Joke {
 
   toggle() {
     this.hide = !this.hide;
+  }
+}
+
+const MAX_JOKES_TOKEN = new InjectionToken<string>("Max Jokes");
+
+class JokeService {
+  jokes: Joke[];
+
+  constructor(@Inject(MAX_JOKES_TOKEN) public maxJokes: number) {
+    this.jokes = [
+      new Joke("What did the cheese say when it looked in the mirror?", "Halloumi (Hello Me)"),
+      new Joke("What kind of cheese do you use to disguise a small horse?", "Mask-a-pony (Mascarpone)"),
+      new Joke("A kid threw a lump of cheddar at me", "I thought ‘That’s not very mature’")
+    ];
+  }
+
+  addJoke(joke: Joke) {
+    if (this.jokes.length > this.maxJokes) {
+      this.jokes.splice(this.jokes.length - 1);
+    }
+
+    this.jokes.unshift(joke);
+  }
+
+  deleteJoke(joke: Joke) {
+    const indexToDelete = this.jokes.indexOf(joke);
+    if (indexToDelete != -1) {
+      this.jokes.splice(indexToDelete, 1);
+    }
   }
 }
 
@@ -154,32 +184,13 @@ class JokeFormComponent {
 @Component({
   selector: "joke-list",
   template: `
-    <joke-form (jokeCreated)="addJoke($event)">
+    <joke-form (jokeCreated)="jokeService.addJoke($event)">
     </joke-form>
-    <joke *ngFor="let j of jokes" [joke]="j" (jokeDeleted)="deleteJoke($event)"></joke>
+    <joke *ngFor="let j of jokeService.jokes" [joke]="j" (jokeDeleted)="jokeService.deleteJoke($event)"></joke>
   `
 })
 class JokeListComponent {
-  jokes: Joke[];
-
-  constructor() {
-    this.jokes = [
-      new Joke("What did the cheese say when it looked in the mirror?", "Halloumi (Hello Me)"),
-      new Joke("What kind of cheese do you use to disguise a small horse?", "Mask-a-pony (Mascarpone)"),
-      new Joke("A kid threw a lump of cheddar at me", "I thought ‘That’s not very mature’")
-    ];
-  }
-
-  addJoke(joke: Joke) {
-    this.jokes.unshift(joke);
-  }
-
-  deleteJoke(joke: Joke) {
-    const indexToDelete = this.jokes.indexOf(joke);
-    if (indexToDelete != -1) {
-      this.jokes.splice(indexToDelete, 1);
-    }
-  }
+  constructor(private jokeService: JokeService) { }
 }
 
 @Component({
@@ -202,7 +213,11 @@ class AppComponent { }
     JokeFormComponent,
     CleanPipe
   ],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
+  providers: [
+    JokeService,
+    { provide: MAX_JOKES_TOKEN, useValue: 3 }
+  ]
 })
 export class AppModule { }
 
