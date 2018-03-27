@@ -238,6 +238,36 @@ class ArtistAlbumListComponent {
 }
 
 @Component({
+  selector: 'app-artist-music-video-list',
+  template: `
+    <ul class="list-group">
+      <li class="list-group-item"
+          *ngFor="let video of videos">
+        <img src="{{ video.artworkUrl60 }}">
+        <a target="_blank"
+          href="{{ video.previewUrl }}">{{  video.trackName }}
+        </a>
+      </li>
+    </ul>
+  `
+})
+class ArtistMusicVideoListComponent {
+  private videos: any[];
+
+  constructor(private jsonp: Jsonp,
+    private route: ActivatedRoute) {
+    this.route.parent.params.subscribe(params => {
+      this.jsonp.request(`https://itunes.apple.com/lookup?id=${params['artistId']}&entity=musicVideo&callback=JSONP_CALLBACK`)
+        .toPromise()
+        .then(res => {
+          console.log(res.json());
+          this.videos = res.json().results.slice(1);
+        });
+    });
+  }
+}
+
+@Component({
   selector: 'app-artist',
   template: `
     <div class="card">
@@ -256,6 +286,12 @@ class ArtistAlbumListComponent {
               <a class="nav-link"
                 [routerLinkActive]="['active']"
                 [routerLink]="['./albums']">Albums
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link"
+                [routerLinkActive]="['active']"
+                [routerLink]="['./videos']">Videos
               </a>
             </li>
           </ul>
@@ -365,6 +401,7 @@ const routes: Routes = [
       { path: '', redirectTo: 'tracks', pathMatch: 'full' },
       { path: 'tracks', component: ArtistTrackListComponent },
       { path: 'albums', component: ArtistAlbumListComponent },
+      { path: 'videos', component: ArtistMusicVideoListComponent },
     ]
   },
   { path: '**', component: HomeComponent }
@@ -387,6 +424,7 @@ const routes: Routes = [
     HeaderComponent,
     ArtistAlbumListComponent,
     ArtistTrackListComponent,
+    ArtistMusicVideoListComponent,
     ArtistComponent
   ],
   bootstrap: [AppComponent],
